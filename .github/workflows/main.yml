@@ -35,5 +35,8 @@ jobs:
 
       # Step 6: Run the Python script
       - name: Run RealPrefLib script
+        env:
+          JSESSIONID: ${{ env.JSESSIONID }}
+          INCAP_SES: ${{ env.INCAP_SES }}
         run: |
           python main.py chrome
