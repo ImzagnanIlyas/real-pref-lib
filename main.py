@@ -84,18 +84,21 @@ def main():
         driver = create_edge_driver()
     print('[LOG]: Driver created')
 
+     # Set cookies BEFORE navigating to any page
+    driver.get("https://www.rdv-prefecture.interieur.gouv.fr/")
+    set_session_cookies(driver)
+    print('[LOG]: Cookies set')
+    sleep(3)
+
     # Navigate to the first page
     driver.get("https://www.rdv-prefecture.interieur.gouv.fr/rdvpref/reservation/demarche/4407/cgu/")
     sleep(3)
-
-    # Set coockies
-    set_session_cookies(driver)
 
     # Navigate to a page that requires Captcha cookies
     driver.get("https://www.rdv-prefecture.interieur.gouv.fr/rdvpref/reservation/demarche/4407/creneau/")
     sleep(3)
 
-    # Check if the session
+    # Check if the session has expired
     if is_session_expired(driver):
         raise Exception("Session has expired. Please update the cookies.")
     
