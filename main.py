@@ -40,15 +40,19 @@ def create_chrome_driver():
 
 def is_session_expired(driver):
     current_url = driver.current_url
+    print(f'[LOG]: current_url = ${current_url}')
 
     # Check if the URL has changed to the Captcha page
-    if "cgu" in current_url.lower() or "errorSessionInvalide" in current_url.lower():
+    if "errorSessionInvalide" in current_url.lower():
         return True  # User is on the Captcha page, indicating session expired
     return False  # User is still on the expected page
 
 def set_session_cookies(driver):
-    jsessionid = os.getenv("JSESSIONID") or ''
-    incap_ses_value = os.getenv("INCAP_SES") or ''
+    jsessionid = os.getenv("JSESSIONID") or 'VM-01-48-02-001~VM-01-48-02-001153m8wxuar3h71g5zmoupmy03b2495561.VM-01-48-02-001'
+    incap_ses_value = os.getenv("INCAP_SES") or '6CYxdt1jLEkfNFQbZjzdHizTAmcAAAAANyMVqIAbVmgD8W8fLusCMA=='
+
+    print(f'[LOG]: jsessionid = ${jsessionid}')
+    print(f'[LOG]: incap_ses_value = ${incap_ses_value}')
 
     # Add JSESSIONID cookie
     driver.add_cookie({
