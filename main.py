@@ -1,11 +1,12 @@
 import sys
+import logging
 from selenium import webdriver
 from selenium.webdriver.edge.service import Service as EdgeService
 from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import TimeoutException
 from time import sleep
 import os
 import chromedriver_autoinstaller
@@ -40,10 +41,10 @@ def create_chrome_driver():
 
 def is_session_expired(driver):
     current_url = driver.current_url
-    print(f'[LOG]: current_url = ${current_url}')
+    logging.info(f'current_url = ${current_url}')
 
     # Check if the URL has changed to the Captcha page
-    if "errorSessionInvalide" in current_url.lower():
+    if "errorsessioninvalide" in current_url.lower():
         return True  # User is on the Captcha page, indicating session expired
     return False  # User is still on the expected page
 
@@ -51,8 +52,8 @@ def set_session_cookies(driver):
     jsessionid = os.getenv("JSESSIONID") or 'VM-01-48-02-001~VM-01-48-02-001153m8wxuar3h71g5zmoupmy03b2495561.VM-01-48-02-001'
     incap_ses_value = os.getenv("INCAP_SES") or '6CYxdt1jLEkfNFQbZjzdHizTAmcAAAAANyMVqIAbVmgD8W8fLusCMA=='
 
-    print(f'[LOG]: jsessionid = ${jsessionid}')
-    print(f'[LOG]: incap_ses_value = ${incap_ses_value}')
+    logging.info(f'jsessionid = ${jsessionid}')
+    logging.info(f'incap_ses_value = ${incap_ses_value}')
 
     # Add JSESSIONID cookie
     driver.add_cookie({
@@ -63,7 +64,7 @@ def set_session_cookies(driver):
         "secure": True,
         "httpOnly": True
     })
-    print(f'[LOG]: Replaced JSESSIONID cookie with new value.')
+    logging.info(f'Replaced JSESSIONID cookie with new value.')
 
     # Find and replace the dynamic incap_ses_* cookie
     cookies = driver.get_cookies()
@@ -79,19 +80,21 @@ def set_session_cookies(driver):
                 "secure": False,
                 "httpOnly": False
             })
-            print(f"[LOG]: Replaced {cookie['name']} cookie with new value.")
+            logging.info(f"Replaced {cookie['name']} cookie with new value.")
 
 def main():
+    logging.basicConfig(level=logging.INFO, format='[%(levelname)s]: %(message)s')
+
     if len(sys.argv) > 1:
         driver = create_chrome_driver()
     else:
         driver = create_edge_driver()
-    print('[LOG]: Driver created')
+    logging.info('Driver created')
 
      # Set cookies BEFORE navigating to any page
     driver.get("https://www.rdv-prefecture.interieur.gouv.fr/")
     set_session_cookies(driver)
-    print('[LOG]: Cookies set')
+    logging.info('Cookies set')
     sleep(3)
 
     # Navigate to the first page
@@ -113,11 +116,11 @@ def main():
         WebDriverWait(driver, 10).until(
             EC.visibility_of_element_located((By.XPATH, '//*[text() = "Veuillez réessayer ultérieurement."]'))
         )
-    except NoSuchElementException:
+    except TimeoutException:
         raise Exception("Change detected. Check the appointments page")
     
-    print('[LOG]: No changes detected. Appointment not found')
-    print('[LOG]: Script completed')
+    logging.info('No changes detected. Appointment not found')
+    logging.info('Script completed')
 
 if __name__ == "__main__":
     main()
