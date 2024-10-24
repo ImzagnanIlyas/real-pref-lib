@@ -40,9 +40,3 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           python main_ai.py chrome
-
-      - name: Script End
-        env:
-          SKIP_WORKFLOW: ${{ env.SKIP_WORKFLOW }}
-        if: ${{ env.SKIP_WORKFLOW != 'true' }}
-        run: echo "Script Completed"
