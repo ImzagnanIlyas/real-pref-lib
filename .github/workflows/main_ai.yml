@@ -39,6 +39,6 @@ jobs:
       # Step 6: Run the Python script
       - name: Run RealPrefLib-AI script
         env:
-          GEMINI_API_KEY: ${{ env.GEMINI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           python main_ai.py chrome
