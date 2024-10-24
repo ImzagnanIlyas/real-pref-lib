@@ -10,6 +10,7 @@ from selenium.common.exceptions import TimeoutException
 from time import sleep
 import os
 import chromedriver_autoinstaller
+from datetime import datetime
 
 def create_edge_driver():
     options = webdriver.EdgeOptions()
@@ -41,7 +42,7 @@ def create_chrome_driver():
 
 def is_session_expired(driver):
     current_url = driver.current_url
-    logging.info(f'current_url = ${current_url}')
+    logging.info(f'current_url = {current_url}')
 
     # Check if the URL has changed to the Captcha page
     if "errorsessioninvalide" in current_url.lower():
@@ -49,8 +50,8 @@ def is_session_expired(driver):
     return False  # User is still on the expected page
 
 def set_session_cookies(driver):
-    jsessionid = os.getenv("JSESSIONID") or 'VM-01-48-02-001~VM-01-48-02-001153m8wxuar3h71g5zmoupmy03b2495561.VM-01-48-02-001'
-    incap_ses_value = os.getenv("INCAP_SES") or '6CYxdt1jLEkfNFQbZjzdHizTAmcAAAAANyMVqIAbVmgD8W8fLusCMA=='
+    jsessionid = os.getenv("JSESSIONID") or 'VM-01-48-02-003~VM-01-48-02-003l8wk3s082bsz10ab1pboc15032713851.VM-01-48-02-003'
+    incap_ses_value = os.getenv("INCAP_SES") or 'TKtjcs7dYVoebWDrfSHWHmt/BmcAAAAAYiHGVmQwXDYF1to5WkNwQQ=='
 
     logging.info(f'jsessionid = ${jsessionid}')
     logging.info(f'incap_ses_value = ${incap_ses_value}')
@@ -83,44 +84,58 @@ def set_session_cookies(driver):
             logging.info(f"Replaced {cookie['name']} cookie with new value.")
 
 def main():
-    logging.basicConfig(level=logging.INFO, format='[%(levelname)s]: %(message)s')
-
-    if len(sys.argv) > 1:
-        driver = create_chrome_driver()
-    else:
-        driver = create_edge_driver()
-    logging.info('Driver created')
-
-     # Set cookies BEFORE navigating to any page
-    driver.get("https://www.rdv-prefecture.interieur.gouv.fr/")
-    set_session_cookies(driver)
-    logging.info('Cookies set')
-    sleep(3)
-
-    # Navigate to the first page
-    driver.get("https://www.rdv-prefecture.interieur.gouv.fr/rdvpref/reservation/demarche/4407/cgu/")
-    sleep(3)
-
-    # Navigate to a page that requires Captcha cookies
-    driver.get("https://www.rdv-prefecture.interieur.gouv.fr/rdvpref/reservation/demarche/4407/creneau/")
-    sleep(3)
-
-    # Check if the session has expired
-    if is_session_expired(driver):
-        raise Exception("Session has expired. Please update the cookies.")
-    
     try:
-        WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.XPATH, '//*[text() = "Aucun créneau disponible"]'))
-        )
-        WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.XPATH, '//*[text() = "Veuillez réessayer ultérieurement."]'))
-        )
-    except TimeoutException:
-        raise Exception("Change detected. Check the appointments page")
-    
-    logging.info('No changes detected. Appointment not found')
-    logging.info('Script completed')
+        logging.basicConfig(level=logging.INFO, format='[%(levelname)s]: %(message)s')
+
+        if len(sys.argv) > 1:
+            driver = create_chrome_driver()
+        else:
+            driver = create_edge_driver()
+        logging.info('Driver created')
+
+        # Set cookies BEFORE navigating to any page
+        driver.get("https://www.rdv-prefecture.interieur.gouv.fr/")
+        set_session_cookies(driver)
+        logging.info('Cookies set')
+        sleep(3)
+
+        # Navigate to the first page
+        driver.get("https://www.rdv-prefecture.interieur.gouv.fr/rdvpref/reservation/demarche/4407/cgu/")
+        sleep(3)
+
+        while True:
+            logging.info(f"Execution at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            # Navigate to a page that requires Captcha cookies
+            driver.get("https://www.rdv-prefecture.interieur.gouv.fr/")
+            sleep(3)
+            driver.get("https://www.rdv-prefecture.interieur.gouv.fr/rdvpref/reservation/demarche/4407/creneau/")
+            sleep(3)
+
+            # Check if the session has expired
+            if is_session_expired(driver):
+                raise Exception("Session has expired. Please update the cookies.")
+            
+            try:
+                WebDriverWait(driver, 10).until(
+                    EC.visibility_of_element_located((By.XPATH, '//*[text() = "Aucun créneau disponible"]'))
+                )
+                WebDriverWait(driver, 10).until(
+                    EC.visibility_of_element_located((By.XPATH, '//*[text() = "Veuillez réessayer ultérieurement."]'))
+                )
+            except TimeoutException:
+                raise Exception("Change detected. Check the appointments page")
+            
+            logging.info('No changes detected. Appointment not found')
+            logging.info('Waiting for the next run...\n\n')
+            # Wait for 10 minutes before the next execution
+            sleep(60*5)
+    except KeyboardInterrupt:
+        pass
+    except Exception as e:
+        logging.error(e)
+    finally:
+        driver.quit()
+        logging.info('Script completed')
 
 if __name__ == "__main__":
     main()
