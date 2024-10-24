@@ -1,0 +1,44 @@
+name: Run RealPrefLib-AI Script Every 20 Minutes
+
+on:
+  schedule:
+    # Every 5 minutes from 8:00 AM to 11:59 PM
+    - cron: "*/5 8-23 * * *"
+    # Every 5 minutes from 12:00 AM to 1:00 AM
+    - cron: "*/5 0-1 * * *"
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  run-RealPrefLib-AI-script:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the code from the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+
+      # Step 3: Install Chrome browser
+      - name: Install Google Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget unzip
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt install ./google-chrome-stable_current_amd64.deb
+
+      # Step 5: Install Python dependencies
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      # Step 6: Run the Python script
+      - name: Run RealPrefLib-AI script
+        env:
+          GEMINI_API_KEY: ${{ env.GEMINI_API_KEY }}
+        run: |
+          python main_ai.py chrome
