@@ -1,4 +1,4 @@
-name: Run RealPrefLib-AI Script Every 20 Minutes
+name: Run RealPrefLib-AI Script Every 5 Minutes
 
 on:
   schedule:
