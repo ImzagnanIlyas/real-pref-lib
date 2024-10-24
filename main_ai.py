@@ -63,7 +63,7 @@ def main():
     sleep(5)
 
     captcha_not_resolved = True
-    max_attempts = 7  # Set the maximum number of attempts
+    max_attempts = 1  # Set the maximum number of attempts
     attempt_count = 0  # Initialize attempt counter
 
     while captcha_not_resolved and attempt_count < max_attempts:
@@ -122,10 +122,10 @@ def main():
     
     # If captcha not resolved, exit the program gracefully
     if captcha_not_resolved:
-        logging.warning(f"Maximum attempts ({max_attempts}) reached. Marking workflow as Cancelled.")
+        logging.error(f"Maximum attempts ({max_attempts}) reached. Ending program.")
         driver.quit()
-        os.environ['CANCEL_WORKFLOW'] = 'true'
-        sys.exit(0)  # Exit without error
+        os.environ['SKIP_WORKFLOW'] = 'true'
+        sys.exit(0)
 
     try:
         WebDriverWait(driver, 10).until(

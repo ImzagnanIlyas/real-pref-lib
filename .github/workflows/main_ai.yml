@@ -42,5 +42,7 @@ jobs:
           python main_ai.py chrome
 
       - name: Script End
-        if: ${{ env.CANCEL_WORKFLOW != 'true' }}
+        env:
+          SKIP_WORKFLOW: ${{ env.SKIP_WORKFLOW }}
+        if: ${{ env.SKIP_WORKFLOW != 'true' }}
         run: echo "Script Completed"
