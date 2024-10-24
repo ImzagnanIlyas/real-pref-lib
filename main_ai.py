@@ -63,8 +63,11 @@ def main():
     sleep(5)
 
     captcha_not_resolved = True
+    max_attempts = 7  # Set the maximum number of attempts
+    attempt_count = 0  # Initialize attempt counter
 
-    while(captcha_not_resolved):
+    while captcha_not_resolved and attempt_count < max_attempts:
+        attempt_count += 1
         logging.info("Resolving Captcha...")
         # Locate the captcha image element by its ID
         captcha_img = driver.find_element(By.ID, "captchaFR_CaptchaImage")
@@ -116,6 +119,12 @@ def main():
             captcha_not_resolved = False
         else:
             logging.warning("Resolving Captcha Faild")
+    
+    # If captcha not resolved, exit the program gracefully
+    if captcha_not_resolved:
+        logging.info(f"Maximum attempts ({max_attempts}) reached. Ending program.")
+        driver.quit()
+        sys.exit(78)  # Exit with code 78 to mark the workflow as cancelled
 
     try:
         WebDriverWait(driver, 10).until(
