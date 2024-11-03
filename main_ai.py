@@ -58,90 +58,97 @@ def main():
 
     model = genai.GenerativeModel("gemini-1.5-flash")
 
+    URLS = [
+        "https://www.rdv-prefecture.interieur.gouv.fr/rdvpref/reservation/demarche/4407/cgu/",
+        "https://www.rdv-prefecture.interieur.gouv.fr/rdvpref/reservation/demarche/3844/cgu/"
+    ]
+
     # Navigate to the first page
-    driver.get("https://www.rdv-prefecture.interieur.gouv.fr/rdvpref/reservation/demarche/4407/cgu/")
-    sleep(5)
+    for url in URLS:
+        logging.info(f"Processing URL: {url}")
+        driver.get(url)
+        sleep(5)
 
-    captcha_not_resolved = True
-    max_attempts = 7  # Set the maximum number of attempts
-    attempt_count = 0  # Initialize attempt counter
+        captcha_not_resolved = True
+        max_attempts = 10  # Set the maximum number of attempts
+        attempt_count = 0  # Initialize attempt counter
 
-    while captcha_not_resolved and attempt_count < max_attempts:
-        try:
-            attempt_count += 1
-            logging.info("Resolving Captcha...")
-            # Locate the captcha image element by its ID
-            captcha_img = WebDriverWait(driver, 10).until(
-                EC.visibility_of_element_located((By.ID, 'captchaFR_CaptchaImage'))
-            )
-            # Use JavaScript to convert the blob image to a base64 string
-            image_data = driver.execute_script("""
-                var img = arguments[0];
-                var canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                var ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                return canvas.toDataURL('image/png').substring(22);  // Remove the 'data:image/png;base64,' part
-            """, captcha_img)
-
-            # Decode the base64 string to binary image data
-            image_bytes = base64.b64decode(image_data)
-
-            # Save the image as a PNG file
-            with open("captcha_image.png", "wb") as f:
-                f.write(image_bytes)
-            
-            genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-
-            
-            myfile = genai.upload_file("captcha_image.png")
-            result = model.generate_content(
-                [myfile, "\n\n", "Give me an answer only with the text in this captcha? Hint: captcha has only alphabets and digits"]
-            )
+        while captcha_not_resolved and attempt_count < max_attempts:
             try:
-                captcha_value = result.text.replace(" ", "").replace("\n", "")
-                logging.info(f"{captcha_value=}")
-            except:
-                logging.error("Model Error")
-                driver.get("https://www.rdv-prefecture.interieur.gouv.fr/rdvpref/reservation/demarche/4407/cgu/")
+                attempt_count += 1
+                logging.info("Resolving Captcha...")
+                # Locate the captcha image element by its ID
+                captcha_img = WebDriverWait(driver, 10).until(
+                    EC.visibility_of_element_located((By.ID, 'captchaFR_CaptchaImage'))
+                )
+                # Use JavaScript to convert the blob image to a base64 string
+                image_data = driver.execute_script("""
+                    var img = arguments[0];
+                    var canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    var ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    return canvas.toDataURL('image/png').substring(22);  // Remove the 'data:image/png;base64,' part
+                """, captcha_img)
+
+                # Decode the base64 string to binary image data
+                image_bytes = base64.b64decode(image_data)
+
+                # Save the image as a PNG file
+                with open("captcha_image.png", "wb") as f:
+                    f.write(image_bytes)
+                
+                genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+                
+                myfile = genai.upload_file("captcha_image.png")
+                result = model.generate_content(
+                    [myfile, "\n\n", "Give me an answer only with the text in this captcha? Hint: captcha has only alphabets and digits"]
+                )
+                try:
+                    captcha_value = result.text.replace(" ", "").replace("\n", "")
+                    logging.info(f"{captcha_value=}")
+                except:
+                    logging.error("Model Error")
+                    driver.get(url)
+                    sleep(5)
+                    continue
+                
+                captcha_input = driver.find_element(By.ID, "captchaFormulaireExtInput")
+                driver.execute_script("arguments[0].scrollIntoView(true);", captcha_input)
+                captcha_input.clear()
+                captcha_input.send_keys(captcha_value)
+
+                submit_button = driver.find_element(By.XPATH, "//*[@id='contenu']/section/div/div/form/div[2]/button")
+                submit_button.click()
                 sleep(5)
-                continue
-            
-            captcha_input = driver.find_element(By.ID, "captchaFormulaireExtInput")
-            driver.execute_script("arguments[0].scrollIntoView(true);", captcha_input)
-            captcha_input.clear()
-            captcha_input.send_keys(captcha_value)
 
-            submit_button = driver.find_element(By.XPATH, "//*[@id='contenu']/section/div/div/form/div[2]/button")
-            submit_button.click()
-            sleep(5)
+                current_url = driver.current_url
+                if "creneau" in current_url.lower():
+                    captcha_not_resolved = False
+                else:
+                    logging.warning("Resolving Captcha Faild")
+            except Exception as e:
+                logging.error(e)
+        
+        # If captcha not resolved, exit the program gracefully
+        if captcha_not_resolved:
+            logging.error(f"Maximum attempts ({max_attempts}) reached")
+            continue
 
-            current_url = driver.current_url
-            if "creneau" in current_url.lower():
-                captcha_not_resolved = False
-            else:
-                logging.warning("Resolving Captcha Faild")
-        except Exception as e:
-            logging.error(e)
-    
-    # If captcha not resolved, exit the program gracefully
-    if captcha_not_resolved:
-        logging.error(f"Maximum attempts ({max_attempts}) reached. Ending program.")
-        driver.quit()
-        sys.exit(0)
+        try:
+            WebDriverWait(driver, 10).until(
+                EC.visibility_of_element_located((By.XPATH, '//*[text() = "Aucun créneau disponible"]'))
+            )
+            WebDriverWait(driver, 10).until(
+                EC.visibility_of_element_located((By.XPATH, '//*[text() = "Veuillez réessayer ultérieurement."]'))
+            )
+        except TimeoutException:
+            raise Exception("Change detected. Check the appointments page")
+        
+        logging.info('No changes detected. Appointment not found')
 
-    try:
-        WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.XPATH, '//*[text() = "Aucun créneau disponible"]'))
-        )
-        WebDriverWait(driver, 10).until(
-            EC.visibility_of_element_located((By.XPATH, '//*[text() = "Veuillez réessayer ultérieurement."]'))
-        )
-    except TimeoutException:
-        raise Exception("Change detected. Check the appointments page")
-    
-    logging.info('No changes detected. Appointment not found')
     driver.quit()
     logging.info('Script completed')
     
