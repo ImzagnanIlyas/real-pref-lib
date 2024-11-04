@@ -59,8 +59,8 @@ def main():
     model = genai.GenerativeModel("gemini-1.5-flash")
 
     URLS = [
-        "https://www.rdv-prefecture.interieur.gouv.fr/rdvpref/reservation/demarche/4407/cgu/",
-        "https://www.rdv-prefecture.interieur.gouv.fr/rdvpref/reservation/demarche/3844/cgu/"
+        "https://www.rdv-prefecture.interieur.gouv.fr/rdvpref/reservation/demarche/4407/cgu/", #RAINCY
+        # "https://www.rdv-prefecture.interieur.gouv.fr/rdvpref/reservation/demarche/3844/cgu/" # TORCY
     ]
 
     # Navigate to the first page
@@ -70,7 +70,7 @@ def main():
         sleep(5)
 
         captcha_not_resolved = True
-        max_attempts = 10  # Set the maximum number of attempts
+        max_attempts = 20  # Set the maximum number of attempts
         attempt_count = 0  # Initialize attempt counter
 
         while captcha_not_resolved and attempt_count < max_attempts:
