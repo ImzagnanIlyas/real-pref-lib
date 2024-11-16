@@ -5,6 +5,9 @@ on:
     # Every 5 minutes from 6:00 AM to 11:59 PM UTC (8:00 AM to 02:59 AM UTC+2)
     - cron: "*/5 6-23 * * *"
   workflow_dispatch: # Allow manual triggering
+  repository_dispatch:
+    types:
+      - http-trigger
 
 jobs:
   run-RealPrefLib-AI-script:
