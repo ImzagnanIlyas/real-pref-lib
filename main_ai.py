@@ -59,8 +59,8 @@ def main():
     model = genai.GenerativeModel("gemini-1.5-flash")
 
     URLS = [
-        "https://www.rdv-prefecture.interieur.gouv.fr/rdvpref/reservation/demarche/4407/cgu/", #RAINCY
-        # "https://www.rdv-prefecture.interieur.gouv.fr/rdvpref/reservation/demarche/3844/cgu/" # TORCY
+        # "https://www.rdv-prefecture.interieur.gouv.fr/rdvpref/reservation/demarche/4407/cgu/", #RAINCY
+        "https://www.rdv-prefecture.interieur.gouv.fr/rdvpref/reservation/demarche/3844/cgu/" # TORCY
     ]
 
     # Navigate to the first page
